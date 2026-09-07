@@ -33,3 +33,7 @@ npm run build
 项目可直接作为 Node Web Service 部署。构建命令使用 `npm install && npm run build`，启动命令使用 `npm start`。在云平台中配置 `.env.example` 列出的环境变量，不要上传本地 `.env`；`PORT` 通常由平台自动注入。
 
 仓库内的 `render.yaml` 可用于 Render Blueprint 部署。首次创建时填写 `DEEPSEEK_API_KEY` 和可选的 `DEMO_PUBLIC_PASSWORD`；此后每次推送到 GitHub 的 `main` 分支都会自动构建并发布。
+
+## Vercel 部署
+
+仓库已包含 `vercel.json` 和 `api/[...path].mjs`，可直接在 Vercel 导入本仓库。Framework 选择 Vite，构建命令为 `npm run build`，输出目录为 `dist`。在 Project Settings → Environment Variables 中添加 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_TEXT_MODEL`、`DEEPSEEK_VISION_MODEL`，以及可选的 `DEMO_PUBLIC_PASSWORD`，保存后重新部署即可。

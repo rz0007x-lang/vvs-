@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { demoGrade, deepSeekGrade } from "./server/grader.mjs";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT || 4173);
 const apiKey = process.env.DEEPSEEK_API_KEY;
 const baseUrl = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
@@ -96,6 +96,10 @@ if (process.env.NODE_ENV === "production") {
   app.use(vite.middlewares);
 }
 
-app.listen(port, "0.0.0.0", () => {
-  console.log(`研批已启动：http://127.0.0.1:${port}（${apiKey ? `DeepSeek AI 模式 · ${textModel}` : "演示模式"}）`);
-});
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+
+if (isDirectRun) {
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`研批已启动：http://127.0.0.1:${port}（${apiKey ? `DeepSeek AI 模式 · ${textModel}` : "演示模式"}）`);
+  });
+}
