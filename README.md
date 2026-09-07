@@ -31,3 +31,5 @@ npm run build
 ## 云平台部署
 
 项目可直接作为 Node Web Service 部署。构建命令使用 `npm install && npm run build`，启动命令使用 `npm start`。在云平台中配置 `.env.example` 列出的环境变量，不要上传本地 `.env`；`PORT` 通常由平台自动注入。
+
+仓库内的 `render.yaml` 可用于 Render Blueprint 部署。首次创建时填写 `DEEPSEEK_API_KEY` 和可选的 `DEMO_PUBLIC_PASSWORD`；此后每次推送到 GitHub 的 `main` 分支都会自动构建并发布。
