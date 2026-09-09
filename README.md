@@ -36,4 +36,4 @@ npm run build
 
 ## Vercel 部署
 
-仓库已包含 `vercel.json` 和 `api/[...path].mjs`，可直接在 Vercel 导入本仓库。Framework 选择 Vite，构建命令为 `npm run build`，输出目录为 `dist`。在 Project Settings → Environment Variables 中添加 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_TEXT_MODEL`、`DEEPSEEK_VISION_MODEL`，以及可选的 `DEMO_PUBLIC_PASSWORD`，保存后重新部署即可。
+仓库已包含 `vercel.json` 和 `api/[...path].mjs`，可直接在 Vercel 导入本仓库。Framework 选择 Vite，构建命令为 `npm run build`，输出目录为 `dist`。在 Project Settings → Environment Variables 中添加 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_TEXT_MODEL`、`DEEPSEEK_VISION_MODEL`，以及可选的 `DEMO_PUBLIC_PASSWORD`，保存后重新部署即可。注意：`DEEPSEEK_API_KEY` 必须是 DeepSeek 平台生成的 Key（通常以 `sk-` 开头）；Anthropic 的 `sk-ant-` Key 不能调用 DeepSeek 接口。

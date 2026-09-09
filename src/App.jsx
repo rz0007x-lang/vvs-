@@ -22,6 +22,19 @@ import { defaultProfile, QUESTION_TYPES, sampleSubmission } from "./data.js";
 
 const PROFILE_KEY = "yanpi-teacher-profile";
 
+async function readApiResponse(response, fallbackMessage) {
+  const raw = await response.text();
+  let data;
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    const detail = raw.replace(/\s+/g, " ").trim().slice(0, 180);
+    throw new Error(detail || `${fallbackMessage}（HTTP ${response.status}）`);
+  }
+  if (!response.ok) throw new Error(data.error || `${fallbackMessage}（HTTP ${response.status}）`);
+  return data;
+}
+
 function readStored(key, fallback) {
   try {
     const value = localStorage.getItem(key);
@@ -92,8 +105,7 @@ function LoginScreen({ onAuthenticated }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "登录失败");
+      const data = await readApiResponse(response, "登录失败");
       onAuthenticated();
     } catch (caught) {
       setError(caught.message);
@@ -302,8 +314,7 @@ function Workbench({ profile, setProfile }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...submission, ...profile, attachment }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "批改失败");
+      const data = await readApiResponse(response, "批改失败");
       setResult(data); setFeedback(data.feedback);
     } catch (caught) {
       setError(caught.message);

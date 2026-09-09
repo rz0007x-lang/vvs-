@@ -87,7 +87,7 @@ app.post("/api/grade", async (request, response) => {
   }
 });
 
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
   app.use(express.static(path.join(rootDir, "dist")));
   app.use((_request, response) => response.sendFile(path.join(rootDir, "dist", "index.html")));
 } else {
