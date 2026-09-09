@@ -1,5 +1,4 @@
 import "dotenv/config";
-import crypto from "node:crypto";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,34 +11,9 @@ const apiKey = process.env.DEEPSEEK_API_KEY;
 const baseUrl = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
 const textModel = process.env.DEEPSEEK_TEXT_MODEL || "deepseek-v4-pro";
 const visionModel = process.env.DEEPSEEK_VISION_MODEL || "deepseek-v4-flash-vision-exp";
-const publicPassword = process.env.DEMO_PUBLIC_PASSWORD || "";
-const accessToken = crypto.createHash("sha256").update(`yanpi:${publicPassword}`).digest("hex");
 
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "12mb" }));
-
-const hasAccess = (request) => {
-  if (!publicPassword) return true;
-  const cookies = Object.fromEntries((request.headers.cookie || "").split(";").map((item) => item.trim().split("=")));
-  return cookies.yanpi_access === accessToken;
-};
-
-app.get("/api/auth/status", (request, response) => {
-  response.json({ authenticated: hasAccess(request) });
-});
-
-app.post("/api/auth", (request, response) => {
-  if (!publicPassword || request.body?.password === publicPassword) {
-    response.set("Set-Cookie", `yanpi_access=${accessToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200`);
-    return response.json({ ok: true });
-  }
-  return response.status(401).json({ error: "访问密码不正确" });
-});
-
-app.use("/api/grade", (request, response, next) => {
-  if (hasAccess(request)) return next();
-  return response.status(401).json({ error: "请先输入访问密码" });
-});
 
 const gradeLimits = new Map();
 app.use("/api/grade", (request, response, next) => {

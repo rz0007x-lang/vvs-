@@ -8,7 +8,6 @@ import {
   ClipboardList,
   Copy,
   FileText,
-  LockKeyhole,
   LoaderCircle,
   MessageSquareText,
   PenLine,
@@ -100,48 +99,6 @@ function Header({ mode }) {
   );
 }
 
-function LoginScreen({ onAuthenticated }) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await readApiResponse(response, "登录失败");
-      onAuthenticated();
-    } catch (caught) {
-      setError(caught.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <main className="login-page">
-      <form className="login-panel" onSubmit={submit}>
-        <span className="login-mark"><PenLine size={22} /></span>
-        <span className="eyebrow">上海交大数字文创与管理</span>
-        <h1>研批工作台</h1>
-        <p>请输入访问密码后继续。</p>
-        <label className="login-field">
-          <span>访问密码</span>
-          <div><LockKeyhole size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoFocus autoComplete="current-password" placeholder="输入访问密码" /></div>
-        </label>
-        {error && <div className="login-error"><CircleAlert size={15} />{error}</div>}
-        <button className="primary-button login-submit" disabled={loading || !password}>{loading ? <LoaderCircle className="spin" size={18} /> : <ChevronRight size={18} />}{loading ? "正在验证……" : "进入工作台"}</button>
-      </form>
-    </main>
-  );
-}
-
 function AttachmentPreview({ attachment, onRemove }) {
   if (!attachment) return null;
   return (
@@ -226,21 +183,21 @@ function ResultPanel({ result, feedback, setFeedback }) {
         <div className="score-number"><strong>{result.score}</strong><span>/ {result.maxScore}</span></div>
         <div><span className="eyebrow">总体判断</span><p>{result.summary}</p></div>
       </div>
-      <div className="dimension-list">
-        {result.dimensions.map((item) => (
-          <div className="dimension" key={item.name}>
-            <div><strong>{item.name}</strong><span>{item.score} / {item.maxScore}</span></div>
-            <div className="meter"><span style={{ width: `${Math.max(0, Math.min(100, (item.score / item.maxScore) * 100))}%` }} /></div>
-            <p>{item.note}</p>
+      <div className="feedback-block">
+        <span className="eyebrow">综合意见</span>
+        <p>{result.feedback}</p>
+      </div>
+      <div className="annotation-list">
+        <span className="eyebrow">逐句意见</span>
+        {result.annotations.map((item, index) => (
+          <div className="annotation" key={`${item.quote}-${index}`}>
+            <blockquote>“{item.quote}”</blockquote>
+            <p>{item.comment}</p>
           </div>
         ))}
       </div>
-      <div className="finding-columns">
-        <div><h3><CheckCircle2 size={16} />做得好的</h3>{result.strengths.map((item) => <p key={item}>{item}</p>)}</div>
-        <div><h3><CircleAlert size={16} />优先改进</h3>{result.problems.map((item) => <p key={item}>{item}</p>)}</div>
-      </div>
       <label className="field">
-        <span>给学生的评语 <small>可直接修改</small></span>
+        <span>最终意见 <small>可直接修改后复制</small></span>
         <textarea className="feedback-editor" value={feedback} onChange={(event) => setFeedback(event.target.value)} />
       </label>
     </div>
@@ -248,7 +205,6 @@ function ResultPanel({ result, feedback, setFeedback }) {
 }
 
 function GradingControls({ submission, setSubmission, profile, setProfile, onTypeChange, onGrade, loading, error }) {
-  const [openSection, setOpenSection] = useState("rubric");
   return (
     <div className="grading-controls">
       <div className="question-type-block">
@@ -258,23 +214,19 @@ function GradingControls({ submission, setSubmission, profile, setProfile, onTyp
         </div>
       </div>
       <div className="control-section">
-        <button className="section-toggle" onClick={() => setOpenSection(openSection === "rubric" ? "" : "rubric")}>
-          <span><ClipboardList size={17} />评分规则</span><ChevronRight size={17} className={openSection === "rubric" ? "rotated" : ""} />
-        </button>
-        {openSection === "rubric" && <div className="section-body">
+        <div className="section-title"><ClipboardList size={17} />评分规则</div>
+        <div className="section-body">
           <label className="compact-field"><span>满分</span><input type="number" min="1" max="200" value={submission.maxScore} onChange={(event) => setSubmission({ ...submission, maxScore: Number(event.target.value) })} /></label>
           <label className="field"><span>规则与扣分细节</span><textarea value={submission.rubric} onChange={(event) => setSubmission({ ...submission, rubric: event.target.value })} /></label>
           <label className="field"><span>参考答案 <small>用于综合比对，可留空</small></span><textarea value={submission.referenceAnswer || ""} onChange={(event) => setSubmission({ ...submission, referenceAnswer: event.target.value })} placeholder="粘贴教师参考答案、要点或标准结构……" /></label>
-        </div>}
+        </div>
       </div>
       <div className="control-section">
-        <button className="section-toggle" onClick={() => setOpenSection(openSection === "style" ? "" : "style")}>
-          <span><MessageSquareText size={17} />我的批改风格</span><ChevronRight size={17} className={openSection === "style" ? "rotated" : ""} />
-        </button>
-        {openSection === "style" && <div className="section-body">
+        <div className="section-title"><MessageSquareText size={17} />批改风格 <small>全题型共用预设</small></div>
+        <div className="section-body">
           <label className="field"><span>语气和方法 <small>全题型共用预设</small></span><textarea value={profile.tone} onChange={(event) => setProfile({ ...profile, tone: event.target.value })} /></label>
           <label className="field"><span>常用口癖</span><textarea className="short" value={profile.catchphrases} onChange={(event) => setProfile({ ...profile, catchphrases: event.target.value })} /></label>
-        </div>}
+        </div>
       </div>
       {error && <div className="error-message"><CircleAlert size={16} />{error}</div>}
       <button className="primary-button grade-button" onClick={onGrade} disabled={loading}>
@@ -393,10 +345,8 @@ export default function App() {
   const [page, setPage] = useState("workbench");
   const [mode, setMode] = useState("demo");
   const [profile, setProfile] = useState(() => normalizeProfile(readStored(PROFILE_KEY, defaultProfile)));
-  const [authenticated, setAuthenticated] = useState(null);
 
   useEffect(() => { fetch("/api/health").then((response) => response.json()).then((data) => setMode(data.mode)).catch(() => setMode("demo")); }, []);
-  useEffect(() => { fetch("/api/auth/status").then((response) => response.json()).then((data) => setAuthenticated(data.authenticated)).catch(() => setAuthenticated(false)); }, []);
   useEffect(() => { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }, [profile]);
 
   const content = useMemo(() => {
@@ -404,9 +354,6 @@ export default function App() {
     if (page === "style") return <StylePage profile={profile} setProfile={setProfile} />;
     return <Workbench profile={profile} setProfile={setProfile} />;
   }, [page, profile]);
-
-  if (authenticated === null) return <main className="login-page"><LoaderCircle className="spin" size={24} /></main>;
-  if (!authenticated) return <LoginScreen onAuthenticated={() => setAuthenticated(true)} />;
 
   return (
     <div className="app-shell">
