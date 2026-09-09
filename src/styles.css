@@ -156,6 +156,10 @@ textarea { resize: vertical; }
 .page-intro p { margin: 0; color: #757c74; line-height: 1.6; }
 .settings-layout { display: grid; grid-template-columns: minmax(0, 680px) minmax(250px, 360px); gap: 28px; align-items: start; }
 .settings-form { padding: 22px; background: #fff; border: 1px solid #dfe4dc; border-radius: 6px; }
+.style-type-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; margin-bottom: 8px; background: #eef1ec; border: 1px solid #dfe4dc; border-radius: 6px; }
+.style-type-tabs button { height: 32px; color: #687068; background: transparent; border: 0; border-radius: 4px; font-size: 12px; }
+.style-type-tabs button.active { color: #225c42; background: #fff; box-shadow: 0 1px 3px rgba(30, 45, 35, .1); font-weight: 700; }
+.style-type-hint { margin: 0 0 18px; color: #858b84; font-size: 12px; }
 .settings-form .field { margin-top: 0; margin-bottom: 18px; }
 .save-profile { min-width: 150px; }
 .style-preview { padding: 20px; background: #fffdf8; border: 1px solid #e5d9bf; border-radius: 6px; }

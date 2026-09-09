@@ -1,7 +1,13 @@
-export const defaultProfile = {
+const baseProfile = {
   tone: "语气直接但不打击学生。先肯定做得好的地方，再指出最影响得分的问题，最后给出一到两个具体修改动作。重点看概念是否准确、是否结合数字文创与管理专业语境。",
   catchphrases: "这个地方要注意；再往前走一步；这类问题下次不要再丢分",
   examples: "例1：整体方向是对的，但论证还停在表面。再往前走一步，把原因和结果说透。\n例2：这个地方要注意，结论没有材料支撑，不能只凭感觉判断。",
+};
+
+export const defaultProfile = {
+  definition: { ...baseProfile },
+  short: { ...baseProfile },
+  essay: { ...baseProfile },
 };
 
 export const QUESTION_TYPES = {
@@ -38,4 +44,5 @@ export const sampleSubmission = {
 但平台也可能造成流量集中和内容同质化，因此需要通过规则治理来平衡商业效率与文化价值。`,
   maxScore: 20,
   rubric: QUESTION_TYPES.short.rubric,
+  referenceAnswer: "平台化不仅是连接多方参与者的技术基础设施，也是一种重新组织内容生产、分发和价值实现的产业机制。高分答案应说明平台的连接、数据和规则治理能力，并结合数字文化产业案例分析其效率与风险。",
 };

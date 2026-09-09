@@ -44,6 +44,16 @@ function readStored(key, fallback) {
   }
 }
 
+function normalizeProfile(value) {
+  if (value && value.definition && value.short && value.essay) {
+    return Object.fromEntries(Object.keys(defaultProfile).map((type) => [type, { ...defaultProfile[type], ...value[type] }]));
+  }
+  if (value && typeof value.tone === "string") {
+    return Object.fromEntries(Object.keys(defaultProfile).map((type) => [type, { ...defaultProfile[type], ...value }]));
+  }
+  return defaultProfile;
+}
+
 function IconButton({ label, children, ...props }) {
   return <button className="icon-button" title={label} aria-label={label} {...props}>{children}</button>;
 }
@@ -237,7 +247,7 @@ function ResultPanel({ result, feedback, setFeedback }) {
   );
 }
 
-function GradingControls({ submission, setSubmission, profile, setProfile, onTypeChange, onGrade, loading, error }) {
+function GradingControls({ submission, setSubmission, styleProfile, setStyleProfile, onTypeChange, onGrade, loading, error }) {
   const [openSection, setOpenSection] = useState("rubric");
   return (
     <div className="grading-controls">
@@ -254,6 +264,7 @@ function GradingControls({ submission, setSubmission, profile, setProfile, onTyp
         {openSection === "rubric" && <div className="section-body">
           <label className="compact-field"><span>满分</span><input type="number" min="1" max="200" value={submission.maxScore} onChange={(event) => setSubmission({ ...submission, maxScore: Number(event.target.value) })} /></label>
           <label className="field"><span>规则与扣分细节</span><textarea value={submission.rubric} onChange={(event) => setSubmission({ ...submission, rubric: event.target.value })} /></label>
+          <label className="field"><span>参考答案 <small>用于综合比对，可留空</small></span><textarea value={submission.referenceAnswer || ""} onChange={(event) => setSubmission({ ...submission, referenceAnswer: event.target.value })} placeholder="粘贴教师参考答案、要点或标准结构……" /></label>
         </div>}
       </div>
       <div className="control-section">
@@ -261,8 +272,8 @@ function GradingControls({ submission, setSubmission, profile, setProfile, onTyp
           <span><MessageSquareText size={17} />我的批改风格</span><ChevronRight size={17} className={openSection === "style" ? "rotated" : ""} />
         </button>
         {openSection === "style" && <div className="section-body">
-          <label className="field"><span>语气和方法</span><textarea value={profile.tone} onChange={(event) => setProfile({ ...profile, tone: event.target.value })} /></label>
-          <label className="field"><span>常用口癖</span><textarea className="short" value={profile.catchphrases} onChange={(event) => setProfile({ ...profile, catchphrases: event.target.value })} /></label>
+          <label className="field"><span>语气和方法 <small>已按本题型保存</small></span><textarea value={styleProfile.tone} onChange={(event) => setStyleProfile({ ...styleProfile, tone: event.target.value })} /></label>
+          <label className="field"><span>常用口癖</span><textarea className="short" value={styleProfile.catchphrases} onChange={(event) => setStyleProfile({ ...styleProfile, catchphrases: event.target.value })} /></label>
         </div>}
       </div>
       {error && <div className="error-message"><CircleAlert size={16} />{error}</div>}
@@ -297,6 +308,9 @@ function Workbench({ profile, setProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const styleProfile = profile[submission.questionType] || defaultProfile.short;
+
+  const setStyleProfile = (next) => setProfile((current) => ({ ...current, [submission.questionType]: next }));
 
   const changeType = (questionType) => {
     const preset = QUESTION_TYPES[questionType];
@@ -312,7 +326,7 @@ function Workbench({ profile, setProfile }) {
       const response = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...submission, ...profile, attachment }),
+        body: JSON.stringify({ ...submission, ...styleProfile, attachment }),
       });
       const data = await readApiResponse(response, "批改失败");
       setResult(data); setFeedback(data.feedback);
@@ -344,7 +358,7 @@ function Workbench({ profile, setProfile }) {
       <div className="workbench-grid">
         <AnswerPanel submission={submission} setSubmission={setSubmission} attachment={attachment} setAttachment={setAttachment} />
         <aside className="review-panel">
-          <GradingControls submission={submission} setSubmission={setSubmission} profile={profile} setProfile={setProfile} onTypeChange={changeType} onGrade={grade} loading={loading} error={error} />
+          <GradingControls submission={submission} setSubmission={setSubmission} styleProfile={styleProfile} setStyleProfile={setStyleProfile} onTypeChange={changeType} onGrade={grade} loading={loading} error={error} />
           <section className="result-panel">
             <div className="result-heading"><h2>批改结果</h2>{result && <span>{result.mode === "ai" ? "AI 实际评分" : "演示评分"}</span>}</div>
             <ResultPanel result={result} feedback={feedback} setFeedback={setFeedback} />
@@ -361,15 +375,22 @@ function Workbench({ profile, setProfile }) {
 
 function StylePage({ profile, setProfile }) {
   const [saved, setSaved] = useState(false);
+  const [selectedType, setSelectedType] = useState("short");
+  const styleProfile = profile[selectedType] || defaultProfile.short;
+  const setStyleProfile = (next) => setProfile((current) => ({ ...current, [selectedType]: next }));
   const save = () => { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); setSaved(true); setTimeout(() => setSaved(false), 1800); };
   return (
     <main className="standard-page">
       <div className="page-intro"><span className="eyebrow">教师设置</span><h1>我的批改风格</h1><p>这里的内容会自动用于每一次批改。真实批改示例通常比单独填写口癖更有效。</p></div>
       <div className="settings-layout">
         <section className="settings-form">
-          <label className="field"><span>整体语气和反馈顺序</span><textarea value={profile.tone} onChange={(event) => setProfile({ ...profile, tone: event.target.value })} /></label>
-          <label className="field"><span>常用表达或口癖</span><textarea value={profile.catchphrases} onChange={(event) => setProfile({ ...profile, catchphrases: event.target.value })} /></label>
-          <label className="field"><span>真实批改示例</span><textarea className="tall" value={profile.examples} onChange={(event) => setProfile({ ...profile, examples: event.target.value })} /></label>
+          <div className="style-type-tabs" aria-label="选择要设置的题型">
+            {Object.entries(QUESTION_TYPES).map(([type, preset]) => <button key={type} className={selectedType === type ? "active" : ""} onClick={() => setSelectedType(type)}>{preset.label}</button>)}
+          </div>
+          <p className="style-type-hint">当前设置会自动复用于每次{QUESTION_TYPES[selectedType].label}批改。</p>
+          <label className="field"><span>整体语气和反馈顺序</span><textarea value={styleProfile.tone} onChange={(event) => setStyleProfile({ ...styleProfile, tone: event.target.value })} /></label>
+          <label className="field"><span>常用表达或口癖</span><textarea value={styleProfile.catchphrases} onChange={(event) => setStyleProfile({ ...styleProfile, catchphrases: event.target.value })} /></label>
+          <label className="field"><span>真实批改示例</span><textarea className="tall" value={styleProfile.examples} onChange={(event) => setStyleProfile({ ...styleProfile, examples: event.target.value })} /></label>
           <button className="primary-button save-profile" onClick={save}>{saved ? <Check size={17} /> : <Save size={17} />}{saved ? "已保存" : "保存批改风格"}</button>
         </section>
         <aside className="style-preview"><span className="eyebrow">效果预览</span><p><strong>整体方向是对的，</strong>但论证还停在结论层面。这个地方要注意，指出观点以后需要再补一句依据。再往前走一步，把因果关系说明白，得分会更稳。</p></aside>
@@ -381,7 +402,7 @@ function StylePage({ profile, setProfile }) {
 export default function App() {
   const [page, setPage] = useState("workbench");
   const [mode, setMode] = useState("demo");
-  const [profile, setProfile] = useState(() => readStored(PROFILE_KEY, defaultProfile));
+  const [profile, setProfile] = useState(() => normalizeProfile(readStored(PROFILE_KEY, defaultProfile)));
   const [authenticated, setAuthenticated] = useState(null);
 
   useEffect(() => { fetch("/api/health").then((response) => response.json()).then((data) => setMode(data.mode)).catch(() => setMode("demo")); }, []);
