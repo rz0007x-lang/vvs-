@@ -25,8 +25,11 @@ async function readApiResponse(response, fallbackMessage) {
   try {
     data = raw ? JSON.parse(raw) : {};
   } catch {
-    const detail = raw.replace(/\s+/g, " ").trim().slice(0, 180);
-    throw new Error(detail || `${fallbackMessage}（HTTP ${response.status}）`);
+    const detail = raw.replace(/\s+/g, " ").trim();
+    if (/an error occurred|internal server error|function invocation/i.test(detail)) {
+      throw new Error("批改服务暂时异常，请稍后重新生成");
+    }
+    throw new Error(`${fallbackMessage}（HTTP ${response.status}）`);
   }
   if (!response.ok) throw new Error(data.error || `${fallbackMessage}（HTTP ${response.status}）`);
   return data;
@@ -304,16 +307,24 @@ function Workbench({ profile, setProfile }) {
   const grade = async () => {
     setLoading(true); setError(""); setCopied(false);
     try {
-      const response = await fetch("/api/grade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...submission, ...profile, attachment }),
-      });
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 48_000);
+      let response;
+      try {
+        response = await fetch("/api/grade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...submission, ...profile, attachment }),
+          signal: controller.signal,
+        });
+      } finally {
+        window.clearTimeout(timeout);
+      }
       const data = await readApiResponse(response, "批改失败");
       setResult(data); setFeedback(data.feedback);
       setView("result");
     } catch (caught) {
-      setError(caught.message);
+      setError(caught.name === "AbortError" ? "批改超过 48 秒未返回，请缩短答案或稍后重试" : caught.message);
     } finally {
       setLoading(false);
     }

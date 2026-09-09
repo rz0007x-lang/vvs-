@@ -197,29 +197,26 @@ export async function deepSeekGrade(payload, { apiKey, baseUrl, textModel, visio
       model,
       messages: requestMessages,
       response_format: { type: "json_object" },
-      max_tokens: 6000,
+      temperature: 0.2,
+      max_tokens: 1400,
       stream: false,
     });
     let response;
-    let networkError;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: requestBody,
-        });
-        break;
-      } catch (error) {
-        networkError = error;
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: requestBody,
+        signal: AbortSignal.timeout(42_000),
+      });
+    } catch (error) {
+      if (error.name === "TimeoutError" || error.name === "AbortError") {
+        throw new Error("AI 批改超过 42 秒未返回，请缩短答案或稍后重试");
       }
-    }
-
-    if (!response) {
-      throw new Error(`暂时无法连接 DeepSeek，请稍后重试${networkError?.cause?.code ? `（${networkError.cause.code}）` : ""}`);
+      throw new Error("暂时无法连接 DeepSeek，请稍后重试");
     }
 
     if (!response.ok) {
@@ -240,21 +237,12 @@ export async function deepSeekGrade(payload, { apiKey, baseUrl, textModel, visio
     return JSON.parse(start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned);
   };
 
-  let message = await requestCompletion(messages);
+  const message = await requestCompletion(messages);
   let parsed;
   try {
     parsed = parseMessage(message);
   } catch {
-    message = await requestCompletion([
-      ...messages,
-      { role: "assistant", content: message },
-      { role: "user", content: "上一个 JSON 不完整。请重新输出一个更简洁、完整、可解析的 JSON 对象，不要解释。" },
-    ]);
-    try {
-      parsed = parseMessage(message);
-    } catch {
-      throw new Error("DeepSeek 连续返回了不完整的结果，请重新生成");
-    }
+    throw new Error("AI 返回格式异常，请重新生成");
   }
   return normalizeDeepSeekResult(parsed, payload);
 }
