@@ -64,6 +64,20 @@ textarea { resize: vertical; }
 .review-state { display: flex; align-items: center; gap: 5px; padding: 5px 8px; color: #9a622d; background: #fff7eb; border-radius: 4px; font-size: 12px; font-weight: 650; }
 .review-state.done { color: #286b4f; background: #e9f2ed; }
 .workbench-grid { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(390px, 1.08fr) minmax(430px, .92fr); }
+.comparison-page { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(390px, 1.08fr) minmax(430px, .92fr); }
+.comparison-answer { min-width: 0; min-height: 0; padding: 18px; overflow: auto; border-right: 1px solid #d9ded7; background: #f8faf7; }
+.comparison-result { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: #fff; }
+.comparison-heading { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #dfe4dc; }
+.comparison-heading h2 { margin: 3px 0 0; font-size: 15px; }
+.comparison-heading > span { padding: 5px 8px; color: #286b4f; background: #e9f2ed; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.comparison-answer-text { min-height: 100%; padding: 28px 34px; color: #2d302c; background: #fff; border: 1px solid #d7ddd5; border-radius: 4px; box-shadow: 0 8px 24px rgba(35, 47, 39, .06); font-family: Georgia, "Songti SC", serif; font-size: 15px; line-height: 1.9; white-space: pre-wrap; }
+.comparison-image { display: block; width: 100%; max-height: 70vh; margin-bottom: 14px; object-fit: contain; background: #fff; border: 1px solid #d7ddd5; border-radius: 4px; }
+.comparison-file { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 12px; color: #286b4f; background: #fff; border: 1px solid #d7ddd5; border-radius: 4px; font-size: 13px; }
+.comparison-note { color: #7a8279; font-size: 13px; }
+.comparison-result-scroll { min-height: 0; padding: 0 16px; overflow: auto; }
+.comparison-result .publish-bar { justify-content: flex-end; }
+.return-button { height: 32px; display: inline-flex; align-items: center; gap: 5px; padding: 0 9px; color: #5e675f; background: #fff; border: 1px solid #d8ddd6; border-radius: 5px; font-size: 12px; }
+.return-button:hover { color: #286b4f; background: #f4f7f3; }
 .answer-panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; padding: 18px; overflow: hidden; border-right: 1px solid #d9ded7; }
 .panel-heading, .result-heading, .answer-footer, .section-toggle, .score-summary, .dimension > div:first-child, .comment-title { display: flex; align-items: center; justify-content: space-between; }
 .panel-heading { margin-bottom: 12px; }
@@ -158,6 +172,7 @@ textarea { resize: vertical; }
 .annotation p { margin: 6px 0 0; color: #5d645c; font-size: 12px; line-height: 1.5; }
 .feedback-editor { min-height: 104px !important; color: #303530 !important; background: #fffdf8 !important; border-color: #e4d7bc !important; font-size: 13px; }
 .publish-bar { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; background: #fafbf9; border-top: 1px solid #dfe4dc; }
+.publish-bar span { margin-right: auto; color: #858b84; font-size: 11px; }
 
 .standard-page { min-width: 0; padding: 30px clamp(22px, 4vw, 56px) 56px; overflow: auto; }
 .page-intro { max-width: 720px; margin-bottom: 25px; }
@@ -221,6 +236,7 @@ textarea { resize: vertical; }
 
 @media (max-width: 1050px) {
   .workbench-grid { grid-template-columns: minmax(330px, .9fr) minmax(410px, 1.1fr); }
+  .comparison-page { grid-template-columns: minmax(330px, .9fr) minmax(410px, 1.1fr); }
   .answer-editor { padding: 28px; }
   .dimension-list { grid-template-columns: 1fr; }
   .dimension p { display: none; }
@@ -235,7 +251,10 @@ textarea { resize: vertical; }
   .account-block { justify-content: center; padding-inline: 0; }
   .workbench-page { height: auto; min-height: calc(100vh - 60px); }
   .workbench-grid { grid-template-columns: 1fr; }
+  .comparison-page { grid-template-columns: 1fr; }
   .answer-panel { min-height: 580px; border-right: 0; border-bottom: 1px solid #d9ded7; }
+  .comparison-answer { min-height: 440px; border-right: 0; border-bottom: 1px solid #d9ded7; }
+  .comparison-result { min-height: 560px; }
   .review-panel { overflow: visible; }
   .settings-layout { grid-template-columns: 1fr; }
 }

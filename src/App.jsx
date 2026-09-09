@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   Bell,
   Check,
-  CheckCircle2,
-  ChevronRight,
   CircleAlert,
   ClipboardList,
   Copy,
@@ -11,7 +10,6 @@ import {
   LoaderCircle,
   MessageSquareText,
   PenLine,
-  RotateCcw,
   Save,
   Sparkles,
   Upload,
@@ -204,6 +202,39 @@ function ResultPanel({ result, feedback, setFeedback }) {
   );
 }
 
+function ComparisonAnswer({ submission, attachment }) {
+  return (
+    <section className="comparison-answer">
+      <div className="comparison-heading">
+        <div><span className="eyebrow">学生答案</span><h2>{submission.assignment}</h2></div>
+        <span>{QUESTION_TYPES[submission.questionType].label}</span>
+      </div>
+      {attachment?.type?.startsWith("image/") && <img className="comparison-image" src={attachment.dataUrl} alt="学生上传的答案" />}
+      {attachment?.type === "application/pdf" && <div className="comparison-file"><FileText size={28} /><span>{attachment.name}</span></div>}
+      {submission.answer && <article className="comparison-answer-text">{submission.answer}</article>}
+      {!submission.answer && attachment && <p className="comparison-note">请结合左侧附件内容查看批改意见。</p>}
+    </section>
+  );
+}
+
+function ComparisonView({ submission, attachment, result, feedback, setFeedback, onReturn, onCopy, copied }) {
+  return (
+    <div className="comparison-page">
+      <ComparisonAnswer submission={submission} attachment={attachment} />
+      <section className="comparison-result">
+        <div className="comparison-heading">
+          <div><span className="eyebrow">AI 批改</span><h2>分数与意见</h2></div>
+          <button className="return-button" onClick={onReturn}><ArrowLeft size={16} />返回修改</button>
+        </div>
+        <div className="comparison-result-scroll"><ResultPanel result={result} feedback={feedback} setFeedback={setFeedback} /></div>
+        <div className="publish-bar">
+          <button className="primary-button" onClick={onCopy}><Copy size={17} />{copied ? "已复制，可直接粘贴" : "确认并复制结果"}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function GradingControls({ submission, setSubmission, profile, setProfile, onTypeChange, onGrade, loading, error }) {
   return (
     <div className="grading-controls">
@@ -260,12 +291,14 @@ function Workbench({ profile, setProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [view, setView] = useState("edit");
   const changeType = (questionType) => {
     const preset = QUESTION_TYPES[questionType];
     setSubmission((current) => ({ ...current, questionType, maxScore: preset.maxScore, rubric: preset.rubric }));
     setResult(null);
     setFeedback("");
     setCopied(false);
+    setView("edit");
   };
 
   const grade = async () => {
@@ -278,6 +311,7 @@ function Workbench({ profile, setProfile }) {
       });
       const data = await readApiResponse(response, "批改失败");
       setResult(data); setFeedback(data.feedback);
+      setView("result");
     } catch (caught) {
       setError(caught.message);
     } finally {
@@ -303,20 +337,21 @@ function Workbench({ profile, setProfile }) {
         <div><span className="breadcrumb">上海交通大学 / 数字文创与管理专业课</span><h1>{submission.student}</h1></div>
         <div className={`review-state ${copied ? "done" : ""}`}>{copied ? <><Check size={15} />已复制</> : "待确认"}</div>
       </div>
-      <div className="workbench-grid">
-        <AnswerPanel submission={submission} setSubmission={setSubmission} attachment={attachment} setAttachment={setAttachment} />
-        <aside className="review-panel">
-          <GradingControls submission={submission} setSubmission={setSubmission} profile={profile} setProfile={setProfile} onTypeChange={changeType} onGrade={grade} loading={loading} error={error} />
-          <section className="result-panel">
-            <div className="result-heading"><h2>批改结果</h2>{result && <span>{result.mode === "ai" ? "AI 实际评分" : "演示评分"}</span>}</div>
-            <ResultPanel result={result} feedback={feedback} setFeedback={setFeedback} />
-          </section>
-          <div className="publish-bar">
-            <button className="secondary-button" onClick={() => { setResult(null); setFeedback(""); }} disabled={!result}><RotateCcw size={17} />清空</button>
-            <button className="primary-button" onClick={confirmAndCopy} disabled={!result}><Copy size={17} />{copied ? "已复制，可直接粘贴" : "确认并复制结果"}</button>
-          </div>
-        </aside>
-      </div>
+      {view === "result" && result ? (
+        <ComparisonView submission={submission} attachment={attachment} result={result} feedback={feedback} setFeedback={setFeedback} copied={copied} onCopy={confirmAndCopy} onReturn={() => { setResult(null); setFeedback(""); setCopied(false); setView("edit"); }} />
+      ) : (
+        <div className="workbench-grid">
+          <AnswerPanel submission={submission} setSubmission={setSubmission} attachment={attachment} setAttachment={setAttachment} />
+          <aside className="review-panel">
+            <GradingControls submission={submission} setSubmission={setSubmission} profile={profile} setProfile={setProfile} onTypeChange={changeType} onGrade={grade} loading={loading} error={error} />
+            <section className="result-panel">
+              <div className="result-heading"><h2>批改结果</h2><span>生成后进入对照页</span></div>
+              <ResultPanel result={null} feedback="" setFeedback={() => {}} />
+            </section>
+            <div className="publish-bar"><span>生成结果后可在对照页确认并复制。</span></div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
