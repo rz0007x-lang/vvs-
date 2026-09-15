@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { demoGrade, normalizeDeepSeekResult } from "../server/grader.mjs";
+import { demoGrade, normalizeDeepSeekResult, parseJsonObject } from "../server/grader.mjs";
 
 test("demo grader returns bounded structured result", () => {
   const result = demoGrade({
@@ -43,4 +43,18 @@ test("DeepSeek output normalization accepts string findings", () => {
   assert.deepEqual(result.strengths, ["概念准确"]);
   assert.deepEqual(result.problems, ["案例不足"]);
   assert.ok(Array.isArray(result.dimensions));
+});
+
+test("AI JSON parser accepts fences, surrounding text, and trailing commas", () => {
+  assert.deepEqual(
+    parseJsonObject('结果如下：```json\n{"score": 18, "annotations": [],}\n```'),
+    { score: 18, annotations: [] },
+  );
+});
+
+test("AI JSON parser preserves escaped quotes in feedback", () => {
+  assert.deepEqual(
+    parseJsonObject('{"feedback":"原句说\\"平台化\\"，概念方向正确。"} 后续说明'),
+    { feedback: '原句说"平台化"，概念方向正确。' },
+  );
 });
